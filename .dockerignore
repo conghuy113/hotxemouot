@@ -1,0 +1,64 @@
+# VCS
+
+.git/
+.gitignore
+.gitattributes
+
+# IDE
+
+.vscode/
+.idea/
+
+# Python artifacts
+
+**pycache**/
+_.py[cod]
+_.pyo
+_.pyd
+_.so
+\*.egg-info/
+dist/
+build/
+.eggs/
+
+# Virtual environments
+
+.venv/
+venv/
+ENV/
+.env
+.env.\*
+
+# Test and lint caches
+
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+coverage.xml
+.coverage
+htmlcov/
+
+# Jupyter
+
+\*_/.ipynb_checkpoints/
+_.ipynb
+
+# Streamlit
+
+.streamlit/.cache/
+.streamlit/secrets.toml
+
+# Vercel
+
+.vercel/
+
+# Non-runtime content
+
+docs/
+skill/
+tests/
+test/
+
+# Logs
+
+\*.log
