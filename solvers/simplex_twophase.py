@@ -14,9 +14,9 @@ def giai_bai_toan_don_hinh(
     x_conds
 ):
 
-    print("\n" + "="*60)
+    print("\n" + "=" * 60)
     print("THUẬT TOÁN ĐƠN HÌNH 2 PHA")
-    print("="*60)
+    print("=" * 60)
 
     # =====================================================
     # 1. CHUẨN HÓA BIẾN
@@ -53,7 +53,10 @@ def giai_bai_toan_don_hinh(
             var_names.append(f"x{idx}-")
             c_std.append(-c_orig[i])
 
-    # max -> min
+    # =====================================================
+    # MAX -> MIN
+    # =====================================================
+
     is_max = opt_type.lower() == "max"
 
     if is_max:
@@ -90,14 +93,15 @@ def giai_bai_toan_don_hinh(
 
                 row_std.append(-row_orig[i])
 
-            # biến tự do
+            # tự do
             elif cond == "tự do":
 
                 row_std.append(row_orig[i])
+
                 row_std.append(-row_orig[i])
 
         # =========================================
-        # đưa về <=
+        # ĐƯA VỀ <=
         # =========================================
 
         if sign == ">=":
@@ -121,24 +125,20 @@ def giai_bai_toan_don_hinh(
         b_std.append(rhs)
 
     # =====================================================
-    # 3. KIỂM TRA VÔ NGHIỆM
+    # 3. KIỂM TRA VÔ NGHIỆM HIỂN NHIÊN
     # =====================================================
 
     for i in range(len(b_std)):
 
         row = A_std[i]
 
-        # 0 <= b âm
         if all(abs(v) < 1e-9 for v in row) and b_std[i] < -1e-9:
 
             print("\nBÀI TOÁN VÔ NGHIỆM")
 
             if is_max:
-
                 print("max z = -inf")
-
             else:
-
                 print("min z = inf")
 
             return
@@ -207,17 +207,23 @@ def giai_bai_toan_don_hinh(
 
     if needs_phase_1:
 
-        print("\nPHÁT HIỆN b_i < 0")
+        print("\nPHÁT HIỆN TỒN TẠI b_i < 0")
         print("BẮT ĐẦU PHA 1\n")
 
-        # thêm x0
+        # -------------------------------------------------
+        # THÊM x0
+        # -------------------------------------------------
+
         non_basis.append("x0")
 
         for b_var in basis:
 
             dict_A[b_var]["x0"] = 1.0
 
-        # min x0
+        # -------------------------------------------------
+        # epsilon = x0
+        # -------------------------------------------------
+
         W_v = 0.0
 
         W_C = {
@@ -229,7 +235,87 @@ def giai_bai_toan_don_hinh(
 
         W_C["x0"] = 1.0
 
-        # chọn w_i âm nhất
+        # -------------------------------------------------
+        # IN BÀI TOÁN PHA 1
+        # -------------------------------------------------
+
+        print("Pha 1:\n")
+
+        print("Bài toán bổ trợ (BT'):")
+
+        print("{")
+
+        print("   min ε = x0")
+
+        for i, b_var in enumerate(basis):
+
+            expr = ""
+
+            first = True
+
+            for var in non_basis:
+
+                coeff = -dict_A[b_var][var]
+
+                if abs(coeff) < 1e-9:
+                    continue
+
+                if first:
+
+                    if coeff < 0:
+                        expr += f"- {abs(coeff):.2f}{var}"
+                    else:
+                        expr += f"{coeff:.2f}{var}"
+
+                    first = False
+
+                else:
+
+                    if coeff >= 0:
+                        expr += f" + {coeff:.2f}{var}"
+                    else:
+                        expr += f" - {abs(coeff):.2f}{var}"
+
+            print(f"   {expr} <= {dict_b[b_var]:.2f}")
+
+        all_vars = ", ".join(non_basis)
+
+        print(f"   {all_vars} >= 0")
+
+        print("}\n")
+
+        # -------------------------------------------------
+        # IN TỪ VỰNG XUẤT PHÁT
+        # -------------------------------------------------
+
+        print("Từ vựng xuất phát:\n")
+
+        print("ε = x0\n")
+
+        for b_var in basis:
+
+            expr = f"{b_var} = {dict_b[b_var]:.2f}"
+
+            for var in non_basis:
+
+                coeff = dict_A[b_var][var]
+
+                if abs(coeff) < 1e-9:
+                    continue
+
+                if coeff > 0:
+                    expr += f" + {coeff:.2f}*{var}"
+                else:
+                    expr += f" - {abs(coeff):.2f}*{var}"
+
+            print(expr)
+
+        print()
+
+        # -------------------------------------------------
+        # PIVOT ĐẦU TIÊN
+        # -------------------------------------------------
+
         leaving_var = min(
 
             basis,
@@ -277,7 +363,7 @@ def giai_bai_toan_don_hinh(
                 dict_A,
                 W_v,
                 W_C,
-                "x0"
+                "ε"
 
             )
 
@@ -289,7 +375,6 @@ def giai_bai_toan_don_hinh(
 
             }
 
-            # tối ưu pha 1
             if not negative_vars:
 
                 break
@@ -311,10 +396,6 @@ def giai_bai_toan_don_hinh(
                 key=var_sort_key
             )[0]
 
-            # =============================================
-            # ratio test
-            # =============================================
-
             candidates_out = []
 
             for b_var in basis:
@@ -324,17 +405,15 @@ def giai_bai_toan_don_hinh(
                 if coeff < -1e-7:
 
                     ratio = (
+
                         dict_b[b_var]
                         / abs(coeff)
+
                     )
 
                     candidates_out.append(
                         (ratio, b_var)
                     )
-
-            # =============================================
-            # không giới nội
-            # =============================================
 
             if not candidates_out:
 
@@ -381,12 +460,15 @@ def giai_bai_toan_don_hinh(
             step += 1
 
         # =================================================
-        # KẾT LUẬN PHA 1
+        # KẾT THÚC PHA 1
         # =================================================
 
         print("\nKẾT THÚC PHA 1")
 
-        # vô nghiệm
+        # -------------------------------------------------
+        # TH2: VÔ NGHIỆM
+        # -------------------------------------------------
+
         if abs(W_v) > 1e-7:
 
             print("\nTH2:")
@@ -405,14 +487,49 @@ def giai_bai_toan_don_hinh(
 
             return
 
-        # có miền chấp nhận
+        # -------------------------------------------------
+        # TH1: CÓ MIỀN CHẤP NHẬN
+        # -------------------------------------------------
+
         else:
 
             print("\nTH1:")
             print("x0 = 0")
 
+            print("=> chọn x0 = 0")
+
             print("=> miền chấp nhận được khác rỗng")
-            print("=> chuyển sang pha 2")
+
+            print("=> hệ ràng buộc trở thành:")
+
+            for b_var in basis:
+
+                if b_var == "x0":
+                    continue
+
+                expr = f"{b_var} = {dict_b[b_var]:.2f}"
+
+                for var in non_basis:
+
+                    if var == "x0":
+                        continue
+
+                    coeff = dict_A[b_var][var]
+
+                    if abs(coeff) < 1e-9:
+                        continue
+
+                    if coeff > 0:
+
+                        expr += f" + {coeff:.2f}*{var}"
+
+                    else:
+
+                        expr += f" - {abs(coeff):.2f}*{var}"
+
+                print(expr)
+
+            print("\n=> chuyển sang pha 2")
 
         # =================================================
         # XÓA x0
@@ -495,7 +612,6 @@ def giai_bai_toan_don_hinh(
 
         }
 
-        # tối ưu
         if not negative_vars:
 
             print("\nĐÃ TỐI ƯU")
@@ -519,10 +635,6 @@ def giai_bai_toan_don_hinh(
             key=var_sort_key
         )[0]
 
-        # =============================================
-        # ratio test
-        # =============================================
-
         candidates_out = []
 
         for b_var in basis:
@@ -541,10 +653,6 @@ def giai_bai_toan_don_hinh(
                 candidates_out.append(
                     (ratio, b_var)
                 )
-
-        # =============================================
-        # không giới nội
-        # =============================================
 
         if not candidates_out:
 
@@ -594,12 +702,12 @@ def giai_bai_toan_don_hinh(
     # 9. KẾT LUẬN
     # =====================================================
 
-    print("\n" + "="*60)
+    print("\n" + "=" * 60)
     print("KẾT LUẬN CUỐI CÙNG")
-    print("="*60)
+    print("=" * 60)
 
     # =====================================================
-    # TH1: KHÔNG GIỚI NỘI
+    # KHÔNG GIỚI NỘI
     # =====================================================
 
     if is_unbounded:
@@ -607,11 +715,8 @@ def giai_bai_toan_don_hinh(
         print("\nBài toán không giới nội.")
 
         if is_max:
-
             print("max z = inf")
-
         else:
-
             print("min z = -inf")
 
         return
@@ -623,17 +728,15 @@ def giai_bai_toan_don_hinh(
     final_z = -Z_v if is_max else Z_v
 
     # =====================================================
-    # TH2: VÔ SỐ NGHIỆM
+    # VÔ SỐ NGHIỆM
     # =====================================================
 
     has_multiple = False
 
     for nb_var in non_basis:
 
-        # reduced cost = 0
         if abs(Z_C.get(nb_var, 0.0)) < 1e-7:
 
-            # tồn tại hướng di chuyển
             for b_var in basis:
 
                 coeff = dict_A[b_var][nb_var]
@@ -645,10 +748,6 @@ def giai_bai_toan_don_hinh(
 
         if has_multiple:
             break
-
-    # =====================================================
-    # VÔ SỐ NGHIỆM
-    # =====================================================
 
     if has_multiple:
 
@@ -687,7 +786,6 @@ def giai_bai_toan_don_hinh(
 
         val = 0.0
 
-        # x >= 0
         if cond == ">= 0":
 
             val = res.get(
@@ -695,7 +793,6 @@ def giai_bai_toan_don_hinh(
                 0.0
             )
 
-        # x <= 0
         elif cond == "<= 0":
 
             val = -res.get(
@@ -703,7 +800,6 @@ def giai_bai_toan_don_hinh(
                 0.0
             )
 
-        # tự do
         elif cond == "tự do":
 
             val = (
@@ -723,4 +819,4 @@ def giai_bai_toan_don_hinh(
         f"{opt_type} z = {final_z:.4f}"
     )
 
-    print("="*60)
+    print("=" * 60)

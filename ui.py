@@ -261,7 +261,7 @@ def show_result(flow_key, output_text, fig):
 	else:
 		st.info("Chưa có kết quả để hiển thị.")
 
-	if flow_key == "graphical" and fig is not None:
+	if fig is not None:
 		st.markdown("### Đồ thị")
 		st.pyplot(fig)
 
@@ -435,6 +435,8 @@ def main():
 						c,
 						constraints,
 						x_conds,
+						show_plot=False,
+						return_fig=True,
 					)
 				elif flow_key == "tableau":
 					output, fig = run_solver_with_output(
